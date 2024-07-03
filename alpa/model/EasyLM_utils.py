@@ -140,43 +140,6 @@ def blockwise_attn(
     res = rearrange(res, 'n b c h d -> b (n c) h d')
     return res
 
-def with_sharding_constraint(x, partition_specs):
-    """ A smarter version of with_sharding_constraint that only applies the
-        constraint if the current mesh contains the axes in the partition specs.
-    """
-    axis_names = get_names_from_parition_spec(partition_specs)
-    if names_in_current_mesh(*axis_names):
-        x = jax.lax.with_sharding_constraint(x, partition_specs)
-    return x
-
-def get_jax_mesh(axis_dims, names):
-    if axis_dims.startswith('!'):
-        # Allow splitting a physical mesh axis if needed
-        mesh_axis_splitting = True
-        axis_dims = axis_dims[1:]
-    else:
-        mesh_axis_splitting = False
-
-    if ':' in axis_dims:
-        dims = []
-        dim_names = []
-        for axis in axis_dims.split(','):
-            name, dim = axis.split(':')
-            assert name in names
-            dims.append(int(dim))
-            dim_names.append(name)
-        assert(set(dim_names) == set(names))
-    else:
-        dims = [int(x) for x in axis_dims.split(',')]
-        dim_names = names
-    assert len(dims) == len(names)
-    mesh_shape = np.arange(jax.device_count()).reshape(dims).shape
-    if mesh_axis_splitting:
-        physical_mesh = np.array(jax.devices()).reshape(mesh_shape)
-    else:
-        physical_mesh = mesh_utils.create_device_mesh(mesh_shape)
-    return Mesh(physical_mesh, dim_names)
-
 def get_gradient_checkpoint_policy(name):
     return {
         'everything_saveable': jax.checkpoint_policies.everything_saveable,

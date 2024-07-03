@@ -219,9 +219,9 @@ class LLaMAConfigurator(object):
         }[model_name]
         return mlxu.update_config_dict(config, updates)
 
-    @staticmethod
-    def get_jax_mesh(axis_dims):
-        return get_jax_mesh(axis_dims, ('dp', 'fsdp', 'mp'))
+    #@staticmethod
+    #def get_jax_mesh(axis_dims):
+    #    return get_jax_mesh(axis_dims, ('dp', 'fsdp', 'mp'))
 
     @staticmethod
     def get_partition_rules():
@@ -413,9 +413,9 @@ class FlaxLLaMAAttention(nn.Module):
     ):
         xq, xk, xv = self.wq(hidden_states), self.wk(hidden_states), self.wv(hidden_states)
 
-        xq = with_sharding_constraint(xq, PS(("dp", "fsdp"), None, "mp"))
-        xk = with_sharding_constraint(xk, PS(("dp", "fsdp"), None, "mp"))
-        xv = with_sharding_constraint(xv, PS(("dp", "fsdp"), None, "mp"))
+        #xq = with_sharding_constraint(xq, PS(("dp", "fsdp"), None, "mp"))
+        #xk = with_sharding_constraint(xk, PS(("dp", "fsdp"), None, "mp"))
+        #xv = with_sharding_constraint(xv, PS(("dp", "fsdp"), None, "mp"))
 
         xq = einops.rearrange(
             xq, 'b s (h d) -> b s h d',
@@ -469,7 +469,7 @@ class FlaxLLaMAAttention(nn.Module):
                 float32_logits=True,
                 prevent_cse=True,
             )
-            attn_output = with_sharding_constraint(attn_output, PS(("dp", "fsdp"), None, "mp", None))
+            #attn_output = with_sharding_constraint(attn_output, PS(("dp", "fsdp"), None, "mp", None))
         else:
             query_length, key_length = xq.shape[1], xk.shape[1]
 
@@ -509,7 +509,7 @@ class FlaxLLaMAAttention(nn.Module):
                 dtype=jnp.promote_types(self.dtype, jnp.float32),
                 precision=self.precision,
             )
-            attn_weights = with_sharding_constraint(attn_weights, PS(("dp", "fsdp"), "mp", None, None))
+            #attn_weights = with_sharding_constraint(attn_weights, PS(("dp", "fsdp"), "mp", None, None))
             attn_output = jnp.einsum("...hqk,...khd->...qhd", attn_weights, xv, precision=self.precision)
 
         attn_output = einops.rearrange(attn_output, 'b s h d -> b s (h d)')
@@ -643,7 +643,7 @@ class FlaxLLaMABlock(nn.Module):
                 feed_forward_input,
                 deterministic,
             )
-        feed_forward_hidden_states = with_sharding_constraint(feed_forward_hidden_states, PS(("dp", "fsdp"), None, "mp"))
+        #feed_forward_hidden_states = with_sharding_constraint(feed_forward_hidden_states, PS(("dp", "fsdp"), None, "mp"))
 
         hidden_states = hidden_states + feed_forward_hidden_states
 
